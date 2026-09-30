@@ -2,7 +2,7 @@
 export const CharacterV2 = ({ 
     primary, secondary, skin, 
     showSkin, showHair, showUnderwear, showPants, showAoDai, showShoes,
-    _material, pattern, shoeType
+    pattern, shoeType
 }: any) => {
 
 
