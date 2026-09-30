@@ -20,7 +20,7 @@ export const OUTFIT_SCHEMA = {
     }
 };
 
-export const generateOutfit = async (event: string, garment: string, style: string, remixLevel: number, weather: any) => {
+export const generateOutfit = async (_event: string, _garment: string, _style: string, _remixLevel: number, _weather: any) => {
     // Trong môi trường thật, đây là lệnh fetch POST tới Backend Proxy để gọi Gemini
     // --- FALLBACK MOCK DATA (Dùng ngay để Demo nếu hết API quota) ---
     return new Promise((resolve) => {

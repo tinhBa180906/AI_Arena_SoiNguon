@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { motion, AnimatePresence } from 'framer-motion';
 
 export interface DollLayers {
@@ -419,7 +419,7 @@ const BangDoLua = ({ color }: { color: string }) => (
 );
 
 // Truyền thống - TỨ THÂN
-const AoTuThan = ({ primary, secondary, accent, styleMode }: { primary: string, secondary: string, accent: string, styleMode?: string }) => (
+const AoTuThan = ({ primary, accent, styleMode }: { primary: string, secondary: string, accent: string, styleMode?: string }) => (
     <g id="garment-tuthan">
         {/* Váy đen dài chấm mắt cá */}
         <g id="garment-skirt">
@@ -632,7 +632,7 @@ const KhanXep = ({ color }: { color: string }) => (
     </g>
 );
 
-const GuocMoc = ({ color }: { color: string }) => (
+const GuocMoc = (_props: { color: string }) => (
     <g id="garment-guoc">
         <ellipse cx="145" cy="628" rx="18" ry="4" fill="rgba(0,0,0,0.2)" />
         <ellipse cx="255" cy="628" rx="18" ry="4" fill="rgba(0,0,0,0.2)" />

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Download, Share2, X } from 'lucide-react';
+import { Download, Share2, X } from 'lucide-react';
 import { SmartImage } from './SmartImage';
 
 const DUMMY_LOOKS = [
