@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Compass, Camera, BookOpen, Sun, Moon, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Sparkles, Compass, Camera, BookOpen, Moon, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Character, type DollLayers } from './components/PaperDoll';
 import { StageBackground } from './components/Stage';
 import { GuardStamp, GuardModal } from './components/CulturalGuard';

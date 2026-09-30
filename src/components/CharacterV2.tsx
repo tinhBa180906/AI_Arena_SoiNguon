@@ -1,4 +1,3 @@
-import React from 'react';
 
 export const CharacterV2 = ({ 
     primary, secondary, skin, 
@@ -6,10 +5,6 @@ export const CharacterV2 = ({
     material, pattern, shoeType
 }: any) => {
 
-    const isSilk = material === 'Lụa';
-    const isGấm = material === 'Gấm';
-    const isĐũi = material === 'Đũi';
-    const isCotton = material === 'Cotton';
 
     const getPattern = () => {
         switch(pattern) {
