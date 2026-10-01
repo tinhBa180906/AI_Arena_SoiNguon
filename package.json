@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:vercel": "vercel dev",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/genai": "^2.25.0",
     "autoprefixer": "^10.6.1",
     "clsx": "^2.1.1",
     "framer-motion": "^13.4.4",

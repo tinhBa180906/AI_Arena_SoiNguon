@@ -8,33 +8,13 @@ import {
 import { GeminiProvider } from './GeminiProvider';
 import { OllamaProvider } from './OllamaProvider';
 import { isLocalAIEnvironment } from './environment';
+import { ADVISOR_SYSTEM_PROMPT } from './systemPrompt';
 import type { AdvisorResult, ChatMessage } from './types';
 
 const MAX_HISTORY_MESSAGES = 6;
 const answerCache = new Map<string, string>();
 const ollamaProvider = new OllamaProvider();
 const geminiProvider = new GeminiProvider();
-
-const SYSTEM_PROMPT = `Bạn là “Cố vấn Gen Z” của Sợi Nguồn, một stylist am hiểu Việt phục và văn hóa Việt Nam.
-
-Nguyên tắc trả lời:
-- Luôn trả lời trực tiếp câu hỏi hiện tại trước.
-- Dùng lịch sử hội thoại để hiểu câu hỏi nối tiếp và các chi tiết người dùng đang nhắc tới.
-- Không lặp lại điều người dùng vừa biết, trừ khi cần để giải thích hoặc tránh hiểu sai.
-- Không lặp lại lời chào ở mỗi tin nhắn.
-- Trả lời đủ ý, tự nhiên, không dừng giữa câu. Câu hỏi đơn giản nên trả lời trong 3-6 câu; câu hỏi cần giải thích nên dùng 1-3 đoạn ngắn.
-- Trả lời bằng tiếng Việt thân thiện, trẻ trung nhưng không lố; không viết như đang đọc dữ liệu.
-- Ưu tiên tuyệt đối dữ liệu từ NGỮ CẢNH VĂN HÓA và CULTURAL GUARD được cung cấp.
-- Không bịa dữ kiện lịch sử hoặc khẳng định chắc chắn điều không có trong ngữ cảnh. Nếu dữ liệu chưa đủ, nói rõ giới hạn đó.
-
-Với câu hỏi phối đồ:
-- Không chỉ trả lời “được” hoặc “không được”.
-- Nêu rõ có phù hợp không, phù hợp trong bối cảnh nào, vì sao và cách phối an toàn hơn.
-- Chỉ rõ yếu tố truyền thống nên giữ và phần có thể remix khi ngữ cảnh văn hóa có đủ dữ liệu.
-- Không tuyệt đối hóa. Một cách phối có thể không phù hợp với nghi lễ hoặc phục dựng nhưng vẫn dùng được trong concept thời trang sáng tạo nếu giữ các đặc trưng nhận diện chính.
-- Nếu CULTURAL GUARD cảnh báo, giải thích cảnh báo bằng ngôn ngữ dễ hiểu và đề xuất một phương án thay thế cụ thể.
-
-Nếu câu hỏi ngoài Việt phục hoặc văn hóa Việt Nam, trả lời ngắn rằng bạn chuyên về Việt phục và gợi ý người dùng hỏi chủ đề phù hợp.`;
 
 const stylingKeywords = [
     'phoi', 'remix', 'cach tan', 'streetwear', 'y2k', 'sneaker', 'boots', 'phu kien',
@@ -79,7 +59,7 @@ const buildContext = (question: string) => {
         : 'NGỮ CẢNH VĂN HÓA: Chưa tìm thấy dữ liệu liên quan trực tiếp trong culturalDb.';
     const guardContext = buildGuardContext(question, relevantItems[0]?.id);
 
-    return [culturalContext, guardContext].filter(Boolean).join('\n\n');
+    return { culturalContext, guardContext };
 };
 
 export const askAdvisor = async (question: string, history: ChatMessage[] = []): Promise<AdvisorResult> => {
@@ -109,7 +89,7 @@ export const askAdvisor = async (question: string, history: ChatMessage[] = []):
         .filter((message) => message.role === 'user' || message.role === 'assistant')
         .slice(-MAX_HISTORY_MESSAGES);
     const messages: ChatMessage[] = [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: ADVISOR_SYSTEM_PROMPT },
         ...recentHistory,
         { role: 'user', content: trimmedQuestion },
     ];
@@ -126,17 +106,6 @@ export const askAdvisor = async (question: string, history: ChatMessage[] = []):
         }
     }
 
-    if (!geminiProvider.isConfigured) {
-        return {
-            answer: isLocal
-                ? 'Mình chưa kết nối được AI lúc này. Bạn hãy kiểm tra Ollama đang chạy hoặc cấu hình Gemini API key rồi thử lại nhé.'
-                : 'Gemini API chưa được cấu hình trên môi trường production.',
-            providerStatus: 'offline',
-            source: 'unavailable',
-            isError: true,
-        };
-    }
-
     try {
         const answer = await geminiProvider.chat(messages, context);
         answerCache.set(cacheKey, answer);
@@ -145,7 +114,7 @@ export const askAdvisor = async (question: string, history: ChatMessage[] = []):
         return {
             answer: isLocal
                 ? 'Mình chưa kết nối được AI lúc này. Bạn hãy kiểm tra Ollama hoặc kết nối Gemini rồi thử lại nhé.'
-                : 'Mình chưa kết nối được Gemini trên môi trường production. Bạn hãy kiểm tra cấu hình VITE_GEMINI_API_KEY trên Vercel rồi thử lại nhé.',
+                : 'Mình chưa kết nối được Gemini trên môi trường production. Bạn hãy kiểm tra cấu hình Gemini phía máy chủ trên Vercel rồi thử lại nhé.',
             providerStatus: 'offline',
             source: 'unavailable',
             isError: true,

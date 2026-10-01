@@ -1,6 +1,6 @@
 import type { AIProvider } from './AIProvider';
 import { isLocalAIEnvironment } from './environment';
-import type { ChatMessage } from './types';
+import type { AIContext, ChatMessage } from './types';
 
 interface OllamaResponse {
     message?: {
@@ -30,15 +30,18 @@ const cleanModelResponse = (content: string) => {
 export class OllamaProvider implements AIProvider {
     readonly name = 'Ollama';
 
-    async chat(messages: ChatMessage[], context?: string): Promise<string> {
+    async chat(messages: ChatMessage[], context?: AIContext): Promise<string> {
         if (!isLocalAIEnvironment()) {
             throw new Error('Ollama chỉ khả dụng trên localhost hoặc 127.0.0.1.');
         }
 
         const controller = new AbortController();
         const timeout = window.setTimeout(() => controller.abort(), OLLAMA_TIMEOUT_MS);
-        const requestMessages = context
-            ? [{ role: 'system' as const, content: context }, ...messages]
+        const contextText = context
+            ? [context.culturalContext, context.guardContext].filter(Boolean).join('\n\n')
+            : '';
+        const requestMessages = contextText
+            ? [{ role: 'system' as const, content: contextText }, ...messages]
             : messages;
 
         try {
