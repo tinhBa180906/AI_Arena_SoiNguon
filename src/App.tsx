@@ -568,7 +568,7 @@ const MainLayout = ({ onReset, initialConfig }: { onReset: () => void, initialCo
             <div className="flex h-screen w-full bg-giay-do relative">
                 <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onHome={onReset} />
                 <div className="flex-1 w-full h-full">
-                    <Explore />
+                    <Explore onExplore={() => setActiveTab('kham')} />
                 </div>
                 <MobilePillNav activeTab={activeTab} setActiveTab={setActiveTab} />
             </div>
