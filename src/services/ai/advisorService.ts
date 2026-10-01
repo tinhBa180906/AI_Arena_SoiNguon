@@ -7,6 +7,7 @@ import {
 } from '../culturalSearch';
 import { GeminiProvider } from './GeminiProvider';
 import { OllamaProvider } from './OllamaProvider';
+import { isLocalAIEnvironment } from './environment';
 import type { AdvisorResult, ChatMessage } from './types';
 
 const MAX_HISTORY_MESSAGES = 6;
@@ -113,27 +114,41 @@ export const askAdvisor = async (question: string, history: ChatMessage[] = []):
         { role: 'user', content: trimmedQuestion },
     ];
     const context = buildContext(trimmedQuestion);
+    const isLocal = isLocalAIEnvironment();
 
-    try {
-        const answer = await ollamaProvider.chat(messages, context);
-        answerCache.set(cacheKey, answer);
-        return { answer, providerStatus: 'local', source: 'ollama' };
-    } catch {
-        if (geminiProvider.isConfigured) {
-            try {
-                const answer = await geminiProvider.chat(messages, context);
-                answerCache.set(cacheKey, answer);
-                return { answer, providerStatus: 'cloud', source: 'gemini' };
-            } catch {
-                // Return a friendly offline state below.
-            }
+    if (isLocal) {
+        try {
+            const answer = await ollamaProvider.chat(messages, context);
+            answerCache.set(cacheKey, answer);
+            return { answer, providerStatus: 'local', source: 'ollama' };
+        } catch {
+            // Fall back to Gemini below.
         }
     }
 
-    return {
-        answer: 'Mình chưa kết nối được AI lúc này. Bạn hãy kiểm tra Ollama đang chạy; nếu muốn dùng dự phòng, hãy cấu hình Gemini API key rồi thử lại nhé.',
-        providerStatus: 'offline',
-        source: 'unavailable',
-        isError: true,
-    };
+    if (!geminiProvider.isConfigured) {
+        return {
+            answer: isLocal
+                ? 'Mình chưa kết nối được AI lúc này. Bạn hãy kiểm tra Ollama đang chạy hoặc cấu hình Gemini API key rồi thử lại nhé.'
+                : 'Gemini API chưa được cấu hình trên môi trường production.',
+            providerStatus: 'offline',
+            source: 'unavailable',
+            isError: true,
+        };
+    }
+
+    try {
+        const answer = await geminiProvider.chat(messages, context);
+        answerCache.set(cacheKey, answer);
+        return { answer, providerStatus: 'cloud', source: 'gemini' };
+    } catch {
+        return {
+            answer: isLocal
+                ? 'Mình chưa kết nối được AI lúc này. Bạn hãy kiểm tra Ollama hoặc kết nối Gemini rồi thử lại nhé.'
+                : 'Mình chưa kết nối được Gemini trên môi trường production. Bạn hãy kiểm tra cấu hình VITE_GEMINI_API_KEY trên Vercel rồi thử lại nhé.',
+            providerStatus: 'offline',
+            source: 'unavailable',
+            isError: true,
+        };
+    }
 };
