@@ -37,7 +37,23 @@ const providerStyles: Record<ProviderStatus, string> = {
 };
 
 const shuffleQuestions = (questions: QuizQuestion[]) => {
-    const shuffled = [...questions];
+    const shuffled = questions.map((question) => {
+        const shuffledOptions = question.options.map((option, index) => ({
+            option,
+            isCorrect: index === question.correctAnswer,
+        }));
+
+        for (let index = shuffledOptions.length - 1; index > 0; index -= 1) {
+            const randomIndex = Math.floor(Math.random() * (index + 1));
+            [shuffledOptions[index], shuffledOptions[randomIndex]] = [shuffledOptions[randomIndex], shuffledOptions[index]];
+        }
+
+        return {
+            ...question,
+            options: shuffledOptions.map(({ option }) => option),
+            correctAnswer: shuffledOptions.findIndex(({ isCorrect }) => isCorrect),
+        };
+    });
 
     for (let index = shuffled.length - 1; index > 0; index -= 1) {
         const randomIndex = Math.floor(Math.random() * (index + 1));
