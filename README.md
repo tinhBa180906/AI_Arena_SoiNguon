@@ -69,10 +69,10 @@ ollama pull qwen3:4b
 ollama serve
 ```
 
-4. Tạo file `.env` từ `.env.example`:
+4. Tạo file `.env.local` từ `.env.example`:
 
-```bash
-copy .env.example .env
+```powershell
+Copy-Item .env.example .env.local
 ```
 
 5. Cài dependency và chạy ứng dụng:
@@ -86,21 +86,31 @@ Vite chuyển tiếp request `/ollama` tới `VITE_OLLAMA_BASE_URL`, nên lúc p
 
 ### Gemini fallback
 
-Điền API key vào `.env` nếu muốn dùng Gemini khi Ollama lỗi:
+Gemini luôn được gọi qua Vercel Function `POST /api/chat`. API key chỉ được đọc ở phía server và không được đưa vào mã frontend. Để thử đầy đủ luồng Ollama → Gemini trên máy local, điền key vào `.env.local`:
 
 ```dotenv
-VITE_GEMINI_API_KEY=your_api_key_here
+GEMINI_API_KEY=your_api_key_here
+VITE_OLLAMA_BASE_URL=http://localhost:11434
+VITE_OLLAMA_MODEL=qwen3:4b
 ```
 
-Không có Gemini key, ứng dụng vẫn hoạt động bình thường với Ollama và các câu FAQ lấy trực tiếp từ `culturalDb`. Không commit file `.env` hoặc API key thật lên Git.
+Cài Vercel CLI rồi chạy môi trường local có cả frontend và Function:
+
+```powershell
+npm install -g vercel
+vercel dev
+```
+
+`npm run dev` vẫn dùng được khi chỉ cần Vite + Ollama. Nếu Ollama thất bại trong chế độ này, `/api/chat` chỉ hoạt động khi Function được phục vụ bởi `vercel dev`. Không commit `.env`, `.env.local`, thư mục `.vercel` hoặc API key thật lên Git.
 
 ## Luồng AI Advisor
 
 1. Chuẩn hóa câu hỏi và kiểm tra cache trong phiên.
 2. Trả lời FAQ phổ biến trực tiếp từ `culturalDb` nếu có thể.
 3. Tìm tối đa hai bản ghi văn hóa liên quan và chạy Cultural Guard với câu hỏi phối đồ/remix.
-4. Gửi context cùng tối đa 6 tin nhắn gần nhất tới Ollama.
-5. Chỉ gọi Gemini nếu Ollama thất bại.
+4. Trên localhost, gửi context cùng tối đa 6 tin nhắn gần nhất tới Ollama.
+5. Nếu Ollama thất bại, frontend gọi `POST /api/chat` và Vercel Function gọi Gemini bằng `GEMINI_API_KEY` phía server.
+6. Trên production, bỏ qua Ollama và gọi thẳng `POST /api/chat`.
 
 ## Cấu trúc thư mục
 
@@ -122,7 +132,81 @@ src/
 
 ```bash
 npm run dev      # Chạy Vite development server
+npm run dev:vercel # Chạy frontend + Vercel Function ở local
 npm run build    # Type-check và build production
 npm run lint     # Kiểm tra mã nguồn bằng Oxlint
 npm run preview  # Xem bản production build
 ```
+
+## Deploy Vercel riêng
+
+Các bước dưới đây tạo một Vercel project mới trong tài khoản của bạn và không liên kết với Vercel project cũ của team.
+
+```powershell
+cd D:\AI_Arena_SoiNguon
+npm install
+npm run build
+npm install -g vercel
+vercel login
+vercel
+```
+
+Trả lời các câu hỏi của Vercel CLI:
+
+- `Set up and deploy?` → `Yes`
+- `Scope` → chọn tài khoản Vercel của bạn
+- `Link to existing project?` → `No`
+- `Project name` → `soi-nguon-ductien`
+- `Directory` → `./`
+- `Override settings?` → `No`
+
+Sau khi project mới được tạo, thêm Gemini key dưới dạng secret. CLI sẽ yêu cầu bạn nhập giá trị; không dán key vào câu lệnh để tránh lưu key trong lịch sử PowerShell.
+
+```powershell
+vercel env add GEMINI_API_KEY production --sensitive
+vercel env add GEMINI_API_KEY preview --sensitive
+```
+
+Biến `preview` chỉ cần khi bạn muốn AI hoạt động trên các Preview Deployment. Deploy production sau khi thêm secret:
+
+```powershell
+vercel --prod
+```
+
+Kiểm tra Function sau khi deploy, thay URL mẫu bằng domain production Vercel vừa nhận được:
+
+```powershell
+$body = @{
+  messages = @(
+    @{ role = 'user'; content = 'Áo ngũ thân là gì?' }
+  )
+  context = @{
+    culturalContext = ''
+    guardContext = ''
+  }
+} | ConvertTo-Json -Depth 5
+
+Invoke-RestMethod `
+  -Method Post `
+  -Uri 'https://soi-nguon-ductien.vercel.app/api/chat' `
+  -ContentType 'application/json' `
+  -Body $body
+```
+
+Response thành công có dạng:
+
+```json
+{
+  "text": "...",
+  "provider": "gemini"
+}
+```
+
+Sau mỗi lần sửa code, kiểm tra và deploy lại bằng:
+
+```powershell
+npm run build
+vercel --prod
+```
+
+`GEMINI_API_KEY` chỉ tồn tại trong môi trường Vercel Function qua `process.env.GEMINI_API_KEY`. Frontend chỉ gọi `/api/chat`; không tạo biến có tiền tố `VITE_` cho Gemini key vì Vite sẽ đưa các biến đó vào bundle trình duyệt.

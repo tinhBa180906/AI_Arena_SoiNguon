@@ -5,6 +5,11 @@ export interface ChatMessage {
     content: string;
 }
 
+export interface AIContext {
+    culturalContext: string;
+    guardContext: string;
+}
+
 export type ProviderStatus = 'local' | 'cloud' | 'offline';
 
 export interface AdvisorResult {
