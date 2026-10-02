@@ -9,6 +9,11 @@ export interface DollLayers {
     shoes?: string;
     headwear?: string;
     accessories?: string[];
+    skin?: string;
+    core?: string;
+    overlay?: string;
+    accessory?: string;
+    background?: string;
 }
 
 export interface CharacterProps {
